@@ -1,0 +1,24 @@
+{
+  "name": "midjourney-v8-2-visual-brainstormer",
+  "version": "0.2.0",
+  "description": "Direct two-round visual prompting for Midjourney V8.2 and GPT Image 2 across photography, cinema, concept art, illustration, painting, and CG.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AI 视觉导演",
+    "shortDescription": "两轮确定场景与媒介表现，并适配 MJ V8.2 和 GPT Image 2",
+    "longDescription": "从年代与地点开始，以第一轮确定时间、具体地点、人物、事件、天气、媒介和用途；第二轮根据媒介动态推荐作品类型、表现画风、历史流派、作者、器材或制作过程及光色。支持摄影、真人电影、游戏与电影概念美术、插画、油画、水彩和 CG，并分别适配 Midjourney V8.2 与 GPT Image 2 的提示语言。",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "从我提供的年代和地点开始，用两轮索引设计一套视觉方案。",
+      "为同一场景生成12个视觉探索方向或6个固定内容构图版本。",
+      "把已选视觉方案分别改写为 Midjourney V8.2 或 GPT Image 2 提示词。"
+    ]
+  }
+}

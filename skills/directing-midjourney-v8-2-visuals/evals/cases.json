@@ -1,0 +1,108 @@
+{
+  "cases": [
+    {
+      "id": "open-fields-remain-open",
+      "category": "open_state",
+      "prompt": "使用 $directing-midjourney-v8-2-visuals。2002年，北京。目标模型 Midjourney V8.2，R3 单条定稿，真人电影；作者、器材、流派和光色全部选择 0 开放。地点是中关村电子市场外街，其他不要替我决定。",
+      "assertions": [
+        "open_fields_omitted",
+        "no_selection_card",
+        "mj_no_parameters"
+      ]
+    },
+    {
+      "id": "x-decisions-are-disclosed",
+      "category": "ai_design_authorization",
+      "prompt": "使用 $directing-midjourney-v8-2-visuals。目标模型 Midjourney V8.2，R3 单条定稿。1998年广州火车站广场，写实摄影；光色与摄影过程选择 X 由AI设计，其余开放。直接交付。",
+      "assertions": [
+        "x_decisions_disclosed",
+        "open_fields_omitted",
+        "no_selection_card"
+      ]
+    },
+    {
+      "id": "complete-brief-skips-cards",
+      "category": "direct_r3",
+      "prompt": "使用 $directing-midjourney-v8-2-visuals。目标模型 Midjourney V8.2，直接单条定稿，不要选择卡。1990年代中国南方县城汽车站雨夜空场，真人电影，旧塑料座椅、湿水磨石地面、售票窗和站台门，16:9。",
+      "assertions": [
+        "no_selection_card",
+        "mj_no_parameters",
+        "open_fields_omitted"
+      ]
+    },
+    {
+      "id": "era-place-starts-first-round",
+      "category": "open_state",
+      "prompt": "使用 $directing-midjourney-v8-2-visuals。我只有一个起点：2002年，北京。我想探索视觉方向，但不知道具体地点、媒介和用途。",
+      "assertions": [
+        "first_round_only",
+        "open_fields_omitted"
+      ]
+    },
+    {
+      "id": "r1-twelve-real-directions",
+      "category": "r1_diversity",
+      "prompt": "使用 $directing-midjourney-v8-2-visuals。目标模型 Midjourney V8.2，R1 视觉探索。2002年北京中关村电子市场，可信时代重建，真人电影，自然城市人流，入夜初段，其他开放。直接生成十二个方向。",
+      "assertions": [
+        "r1_count_12",
+        "r1_content_diversity",
+        "open_fields_omitted",
+        "mj_no_parameters"
+      ]
+    },
+    {
+      "id": "r2-pharmacy-topology",
+      "category": "r2_continuity",
+      "prompt": "使用 $directing-midjourney-v8-2-visuals。目标模型 Midjourney V8.2，R2 固定场景，真人电影，只要三个版本。狭长的1930年代上海药铺：南端入口、东墙长柜台、西墙布帘隔间、北墙中央后门；暖钨丝灯为主，南门冷雨夜光为辅，稀疏顾客。生成南门向北、东南角斜拍、北侧向南反打。",
+      "assertions": [
+        "prompt_count_matches_requested",
+        "r2_fixed_content",
+        "r2_camera_signatures",
+        "spatial_topology_preserved",
+        "mj_no_parameters"
+      ]
+    },
+    {
+      "id": "dual-model-ledger-equivalence",
+      "category": "model_separation",
+      "prompt": "使用 $directing-midjourney-v8-2-visuals。把同一个固定方案分别输出为 Midjourney V8.2 和 GPT Image 2：冬夜哈尔滨老浴池更衣室，两名外形明显不同的中年男子隔着长凳交谈，真人电影，自然混合光，其他开放。",
+      "assertions": [
+        "same_content_ledger",
+        "mj_no_parameters",
+        "mj_no_gpt_protocol",
+        "gpt_no_mj_syntax"
+      ]
+    },
+    {
+      "id": "two-leads-and-background-crowd",
+      "category": "multi_subject",
+      "prompt": "使用 $directing-midjourney-v8-2-visuals。目标模型 Midjourney V8.2，R3 单条定稿。拥挤的1996年重庆码头，两名主角：左侧高瘦短发女工扛麻袋向上走，右侧矮壮卷发男商贩蹲下整理竹筐；背景群众保持次要。纪实摄影，其他开放。",
+      "assertions": [
+        "lead_identities_separated",
+        "crowd_remains_secondary",
+        "mj_no_parameters"
+      ]
+    },
+    {
+      "id": "selected-image-single-variable-refinement",
+      "category": "refinement",
+      "prompt": "使用 $directing-midjourney-v8-2-visuals 细化我选中的第4个方向。必须保留人物、地点、事件和主色关系；只探索前景遮挡的强弱，输出四个单变量版本，不要重新选择媒介。",
+      "assertions": [
+        "no_two_round_restart",
+        "single_variable_variants",
+        "mj_no_parameters"
+      ]
+    },
+    {
+      "id": "duplicate-character-diagnosis",
+      "category": "diagnosis",
+      "prompt": "使用 $directing-midjourney-v8-2-visuals 诊断这条提示词为什么把两名主角生成成同脸双胞胎，并做最小修复：two young men in matching dark coats stand symmetrically side by side, synchronized poses, identical expressions。目标模型 Midjourney V8.2，不要重走两轮选择。",
+      "assertions": [
+        "no_two_round_restart",
+        "root_cause_identified",
+        "minimal_repair",
+        "lead_identities_separated"
+      ]
+    }
+  ]
+}

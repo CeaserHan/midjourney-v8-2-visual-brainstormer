@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI 视觉导演"
+  short_description: "两轮选择摄影、原画与绘画方向，并适配 MJ 和 GPT Image 2"
+  default_prompt: "使用 $directing-midjourney-v8-2-visuals 从年代和地点开始，通过两轮索引设计并输出适合目标图像模型的提示词。"
