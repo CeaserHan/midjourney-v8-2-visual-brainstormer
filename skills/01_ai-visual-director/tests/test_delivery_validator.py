@@ -204,6 +204,94 @@ class DeliveryValidatorCliTests(unittest.TestCase):
         self.assertIn("INPUT ERROR", completed.stderr)
 
 
+class V03ValidatorTests(unittest.TestCase):
+    def test_rejects_purpose_meta_in_prompt(self) -> None:
+        delivery = """## 单条定稿
+
+```text
+Live-action film still for a city-image magazine report, commuters on a pier.
+```
+"""
+        result = validate_delivery(delivery, target="mj", mode="single")
+        self.assertFalse(result.passed)
+        self.assertTrue(any("purpose" in error for error in result.errors))
+
+    def test_rejects_copied_style_tail(self) -> None:
+        tail = "hong kong new wave realism photographed on 35mm color negative with natural grain"
+        delivery = numbered_delivery("## 统一锁定", 2, prompt="Commuters cross the pier, " + tail)
+        delivery = delivery.replace(tail + " 1", tail).replace(tail + " 2", tail)
+        result = validate_delivery(delivery, target="mj", mode="r1", expected_count=2)
+        self.assertFalse(result.passed)
+        self.assertTrue(any("same 10 words" in error for error in result.errors))
+
+    def test_keyframe_requires_continuity_card_and_two_frames(self) -> None:
+        valid = """## 连续性卡
+
+- 角色：…
+
+### KF1 首帧
+
+```text
+A man in a grey raincoat pushes the door open, lit by one hallway bulb.
+```
+
+### KF2 尾帧
+
+```text
+A man in a grey raincoat steps into the dark room, lit by one hallway bulb behind him.
+```
+"""
+        self.assertTrue(validate_delivery(valid, target="mj", mode="keyframe").passed)
+        missing = valid.replace("## 连续性卡", "## 卡")
+        self.assertFalse(validate_delivery(missing, target="mj", mode="keyframe").passed)
+
+    def test_both_target_doubles_block_count(self) -> None:
+        delivery = """## 单条定稿
+
+```text
+Watercolor of a late-night Chinatown noodle shop.
+```
+
+```text
+Scene: A late-night noodle shop in Chinatown.
+```
+"""
+        self.assertTrue(validate_delivery(delivery, target="both", mode="single").passed)
+
+    def test_long_midjourney_prompt_warns(self) -> None:
+        delivery = "## 单条定稿\n\n```text\n" + " ".join(["word"] * 130) + "\n```\n"
+        result = validate_delivery(delivery, target="mj", mode="single")
+        self.assertTrue(result.passed)
+        self.assertTrue(result.warnings)
+
+
+class V032ValidatorTests(unittest.TestCase):
+    def test_r2_may_restate_fixed_subject_and_place(self) -> None:
+        fixed = "a woman in a grey trench coat waits at the corner payphone of the 1930s pharmacy"
+        parts = ["## 固定内容"]
+        for index, view in enumerate(("low angle from the doorway", "high angle from the stair", "long lens from across the street"), 1):
+            parts += [f"### {index}. 机位 {index}", "", "```text", f"Film still, {view}: {fixed}, rain light at the door {index}.", "```"]
+        result = validate_delivery("\n".join(parts), target="mj", mode="r2", expected_count=3)
+        self.assertTrue(result.passed, result.errors)
+
+    def test_both_mode_catches_gpt_labels_inside_midjourney_block(self) -> None:
+        delivery = """## 单条定稿
+
+**Midjourney**
+```text
+Scene: a noodle shop in Chinatown at night.
+```
+
+**GPT Image**
+```text
+Scene: a noodle shop in Chinatown at night.
+```
+"""
+        result = validate_delivery(delivery, target="both", mode="single")
+        self.assertFalse(result.passed)
+        self.assertTrue(any("Prompt block 1" in e and "production labels" in e for e in result.errors))
+
+
 if __name__ == "__main__":
     unittest.main()
 

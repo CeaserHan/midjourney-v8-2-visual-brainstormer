@@ -1,0 +1,4 @@
+interface:
+  display_name: "01_AI 视觉导演"
+  short_description: "两轮选择场景与媒介表现，为 MJ 和 GPT Image 写提示词，也做视频关键帧"
+  default_prompt: "使用 $01_ai-visual-director 从我的构想开始，通过两轮索引设计并输出适合目标图像模型的提示词。"

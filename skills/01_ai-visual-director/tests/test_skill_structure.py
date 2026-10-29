@@ -43,6 +43,8 @@ class SkillPackageTests(unittest.TestCase):
         self.assertTrue(self.frontmatter["description"])
 
     def test_plugin_manifest_points_to_skills_directory(self) -> None:
+        if not PLUGIN_MANIFEST_PATH.is_file():
+            self.skipTest("standalone skill install without a Codex plugin wrapper")
         manifest = json.loads(PLUGIN_MANIFEST_PATH.read_text(encoding="utf-8"))
         self.assertEqual(manifest["name"], "midjourney-v8-2-visual-brainstormer")
         self.assertEqual(manifest["skills"], "./skills/")
@@ -55,7 +57,7 @@ class SkillPackageTests(unittest.TestCase):
                 self.assertIn(key, metadata)
 
     def test_all_relative_markdown_references_resolve(self) -> None:
-        markdown_files = [SKILL_PATH, *sorted(REFERENCES_DIR.glob("*.md"))]
+        markdown_files = [SKILL_PATH, *sorted(REFERENCES_DIR.rglob("*.md"))]
         unresolved: list[str] = []
         for markdown_file in markdown_files:
             text = markdown_file.read_text(encoding="utf-8")
@@ -70,8 +72,10 @@ class SkillPackageTests(unittest.TestCase):
             "intake-and-routing.md",
             "output-contract.md",
             "model-adapters.md",
-            "midjourney-v8-2.md",
-            "gpt-image-2.md",
+            "midjourney.md",
+            "gpt-image.md",
+            "keyframes.md",
+            "styles/README.md",
         ):
             with self.subTest(filename=filename):
                 self.assertTrue((REFERENCES_DIR / filename).is_file())
@@ -94,7 +98,7 @@ class CrossFileContractTests(unittest.TestCase):
         cls.adapters = (REFERENCES_DIR / "model-adapters.md").read_text(
             encoding="utf-8"
         )
-        cls.mj = (REFERENCES_DIR / "midjourney-v8-2.md").read_text(
+        cls.mj = (REFERENCES_DIR / "midjourney.md").read_text(
             encoding="utf-8"
         )
 
@@ -126,7 +130,60 @@ class CrossFileContractTests(unittest.TestCase):
     def test_gpt_image_edit_protocol_is_stable(self) -> None:
         self.assertIn("Change only", self.adapters)
         self.assertIn("Keep unchanged", self.adapters)
-        self.assertIn("GPT Image 2 输出不得包含 Midjourney 参数", self.adapters)
+        self.assertIn("GPT Image 输出不得包含 Midjourney 参数", self.adapters)
+
+
+class V03ContractTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.skill = SKILL_PATH.read_text(encoding="utf-8")
+        cls.styles = REFERENCES_DIR / "styles"
+
+    def test_keyframe_mode_is_routed(self) -> None:
+        self.assertIn("R4 关键帧", self.skill)
+        self.assertIn("keyframes.md", self.skill)
+
+    def test_prompt_hygiene_rules_are_stated(self) -> None:
+        self.assertIn("O（用途）永不直译进英文提示词", self.skill)
+        self.assertIn("不复制粘贴尾巴", self.skill)
+        self.assertIn("M 本身成立所必需的最少识别信号", self.skill)
+
+    def test_style_cards_tag_signals_and_stay_short(self) -> None:
+        for card in sorted(self.styles.glob("*.md")):
+            if card.name in {"README.md", "_template.md"}:
+                continue
+            with self.subTest(card=card.name):
+                text = card.read_text(encoding="utf-8")
+                self.assertIn("[M]", text)
+                self.assertLessEqual(len(text.splitlines()), 40)
+
+    def test_skill_md_stays_within_budget(self) -> None:
+        self.assertLessEqual(len(self.skill.splitlines()), 200)
+
+
+class V031FieldTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.skill = SKILL_PATH.read_text(encoding="utf-8")
+        cls.intake = (REFERENCES_DIR / "intake-and-routing.md").read_text(encoding="utf-8")
+        cls.media = (REFERENCES_DIR / "media-modules.md").read_text(encoding="utf-8")
+
+    def test_mood_field_exists_and_output_purpose_left_round_one(self) -> None:
+        self.assertIn("| B | 情绪／叙事基调 |", self.intake)
+        self.assertNotIn("| O | 输出用途 |", self.intake)
+        self.assertIn("`Z R U Y G B T L P E W M`", self.skill)
+
+    def test_r1_skips_lpe(self) -> None:
+        self.assertIn("R1 视觉探索不列 L/P/E", self.skill)
+        self.assertIn("R1 视觉探索：不列 L/P/E", self.intake)
+
+    def test_lighting_moved_from_q_to_c(self) -> None:
+        self.assertNotIn("照明过程：可用光、直闪、离机灯等", self.media)
+        self.assertIn("照明方式不属于 Q", self.skill)
+
+    def test_conditional_aspect_and_layout_fields(self) -> None:
+        self.assertIn("| F | 画幅 |", self.intake)
+        self.assertIn("| O | 用途与版面 |", self.intake)
 
 
 if __name__ == "__main__":

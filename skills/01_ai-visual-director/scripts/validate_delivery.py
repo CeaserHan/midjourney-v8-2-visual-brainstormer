@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Sequence
 
 
-TARGETS = ("none", "mj", "gpt2")
+TARGETS = ("none", "mj", "gpt2", "both")
 MODES = (
     "first-round",
     "second-round",
@@ -23,6 +23,7 @@ MODES = (
     "single",
     "refine",
     "diagnose",
+    "keyframe",
 )
 
 DEFAULT_COUNTS = {
@@ -33,6 +34,7 @@ DEFAULT_COUNTS = {
     "single": 1,
     "refine": 4,
     "diagnose": 1,
+    "keyframe": 2,
 }
 
 CODE_BLOCK_PATTERN = re.compile(
@@ -54,6 +56,15 @@ TEMPLATE_PLACEHOLDER_PATTERN = re.compile(
     r"\b(?:TBD|TODO)\b|Complete model-adapted prompt|\[(?:medium|subject|scene|prompt)[^\]]*\]",
     re.IGNORECASE,
 )
+META_PURPOSE_PATTERN = re.compile(
+    r"\bfor (?:a|an|the)\s+(?:[\w-]+\s+){0,3}"
+    r"(?:magazine|report|pitch|portfolio|campaign|presentation|client|deck)\b",
+    re.IGNORECASE,
+)
+TAIL_WORDS = 10
+SHARED_NGRAM = 8
+SHARED_NGRAM_MIN_BLOCKS = 3
+MJ_SOFT_WORD_LIMIT = 110
 MJ_EDIT_PROTOCOL_PATTERN = re.compile(
     r"\b(?:same|original|source image|preserve|unchanged|identical)\b",
     re.IGNORECASE,
@@ -81,6 +92,27 @@ def _extract_prompt_blocks(delivery: str) -> tuple[str, ...]:
     return tuple(match.group("body").strip() for match in CODE_BLOCK_PATTERN.finditer(delivery))
 
 
+LABEL_PATTERN = re.compile(r"\*\*(Midjourney|GPT Image)\*\*\s*$", re.IGNORECASE)
+
+
+def _block_targets(delivery: str, target: str) -> tuple[str, ...]:
+    """Per-block target; in `both` mode read the **Midjourney** / **GPT Image** label above each block."""
+    targets: list[str] = []
+    for match in CODE_BLOCK_PATTERN.finditer(delivery):
+        if target != "both":
+            targets.append(target)
+            continue
+        preceding = delivery[: match.start()].rstrip().splitlines()[-3:]
+        label = ""
+        for line in reversed(preceding):
+            found = LABEL_PATTERN.search(line.strip())
+            if found:
+                label = found.group(1).casefold()
+                break
+        targets.append("mj" if label == "midjourney" else "gpt2" if label == "gpt image" else "both")
+    return tuple(targets)
+
+
 def _expected_count(mode: str, override: int | None) -> int:
     if override is not None:
         if override < 0:
@@ -98,6 +130,7 @@ def _validate_mode_scaffold(delivery: str, mode: str, errors: list[str]) -> None
         "single": ("## 单条定稿",),
         "refine": ("## 保留与改变",),
         "diagnose": ("## 诊断",),
+        "keyframe": ("## 连续性卡",),
     }
     for heading in required_headings[mode]:
         if heading not in delivery:
@@ -132,6 +165,8 @@ def _validate_prompt_block(
         errors.append(f"{label} is empty.")
         return
 
+    if META_PURPOSE_PATTERN.search(block):
+        errors.append(f"{label} translates purpose or delivery context into the prompt.")
     if OPEN_PLACEHOLDER_PATTERN.search(block):
         errors.append(f"{label} contains an open-field meta placeholder.")
     if TEMPLATE_PLACEHOLDER_PATTERN.search(block):
@@ -146,8 +181,58 @@ def _validate_prompt_block(
             errors.append(
                 f"{label} uses referential edit protocol instead of a complete positive restatement."
             )
-    elif target == "gpt2" and MJ_PARAMETER_PATTERN.search(block):
+    elif target in {"gpt2", "both"} and MJ_PARAMETER_PATTERN.search(block):
         errors.append(f"{label} contains Midjourney parameter syntax.")
+
+
+def _tail(block: str) -> tuple[str, ...]:
+    words = re.findall(r"[a-z0-9'-]+", block.casefold())
+    return tuple(words[-TAIL_WORDS:]) if len(words) >= TAIL_WORDS else ()
+
+
+def _validate_repeated_tails(blocks: Sequence[str], errors: list[str]) -> None:
+    seen: dict[tuple[str, ...], int] = {}
+    for index, block in enumerate(blocks, start=1):
+        tail = _tail(block)
+        if not tail:
+            continue
+        if tail in seen:
+            errors.append(
+                f"Prompt blocks {seen[tail]} and {index} end with the same {TAIL_WORDS} words; "
+                "rewrite shared style choices per image."
+            )
+        else:
+            seen[tail] = index
+
+
+def _validate_shared_phrases(blocks: Sequence[str], errors: list[str]) -> None:
+    """Flag long word sequences pasted into many prompts of one set."""
+    if len(blocks) < SHARED_NGRAM_MIN_BLOCKS:
+        return
+    owners: dict[tuple[str, ...], set[int]] = {}
+    for index, block in enumerate(blocks, start=1):
+        words = re.findall(r"[a-z0-9'-]+", block.casefold())
+        for start in range(len(words) - SHARED_NGRAM + 1):
+            owners.setdefault(tuple(words[start : start + SHARED_NGRAM]), set()).add(index)
+    pasted = [gram for gram, ids in owners.items() if len(ids) >= SHARED_NGRAM_MIN_BLOCKS]
+    if pasted:
+        sample = " ".join(pasted[0])
+        errors.append(
+            f"{len(pasted)} phrase(s) of {SHARED_NGRAM}+ words repeat across "
+            f"{SHARED_NGRAM_MIN_BLOCKS}+ prompts (e.g. `{sample}`); rewrite shared style per image."
+        )
+
+
+def _word_count_warnings(blocks: Sequence[str], target: str, warnings: list[str]) -> None:
+    if target != "mj":
+        return
+    for index, block in enumerate(blocks, start=1):
+        count = len(re.findall(r"[A-Za-z0-9'-]+", block))
+        if count > MJ_SOFT_WORD_LIMIT:
+            warnings.append(
+                f"Prompt block {index} has {count} words; "
+                f"Midjourney prompts usually work best under {MJ_SOFT_WORD_LIMIT}."
+            )
 
 
 def validate_delivery(
@@ -175,14 +260,28 @@ def validate_delivery(
 
     _validate_mode_scaffold(delivery, mode, errors)
 
-    if len(blocks) != count:
+    block_count = count * 2 if target == "both" else count
+    if len(blocks) != block_count:
         errors.append(
-            f"Mode `{mode}` requires {count} prompt block(s); received {len(blocks)}."
+            f"Mode `{mode}` requires {block_count} prompt block(s); received {len(blocks)}."
         )
 
     _validate_numbered_headings(delivery, mode, count, errors)
-    for index, block in enumerate(blocks, start=1):
-        _validate_prompt_block(block, target, mode, index, errors)
+    block_targets = _block_targets(delivery, target)
+    for index, (block, block_target) in enumerate(zip(blocks, block_targets), start=1):
+        _validate_prompt_block(block, block_target, mode, index, errors)
+    if target == "both" and "both" in block_targets:
+        warnings.append("Some prompt blocks lack a **Midjourney** / **GPT Image** label; only shared checks ran on them.")
+    # Repetition checks apply only to R1, where every direction has different content.
+    # R2, refinement and keyframes must restate the same subject, place and anchors.
+    if mode == "r1":
+        for group in ("mj", "gpt2"):
+            group_blocks = [b for b, bt in zip(blocks, block_targets) if bt == group]
+            _validate_repeated_tails(group_blocks, errors)
+            _validate_shared_phrases(group_blocks, errors)
+    for group in ("mj",):
+        group_blocks = [b for b, bt in zip(blocks, block_targets) if bt == group]
+        _word_count_warnings(group_blocks, group, warnings)
 
     for pattern in FINAL_CONFIRMATION_PATTERNS:
         if pattern.search(delivery):

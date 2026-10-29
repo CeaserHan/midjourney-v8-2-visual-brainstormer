@@ -21,6 +21,12 @@ REQUIRED_CATEGORIES = {
     "multi_subject",
     "refinement",
     "diagnosis",
+    "first_round_compact",
+    "shortcut",
+    "style_signals",
+    "prompt_hygiene",
+    "keyframe",
+    "field_routing",
 }
 
 ALLOWED_ASSERTIONS = {
@@ -44,6 +50,19 @@ ALLOWED_ASSERTIONS = {
     "single_variable_variants",
     "root_cause_identified",
     "minimal_repair",
+    "first_round_compact",
+    "shortcut_accepted",
+    "medium_signals_present",
+    "no_meta_purpose",
+    "no_repeated_tail",
+    "keyframe_continuity_card",
+    "every_frame_restates_continuity",
+    "r1_no_lpe_questions",
+    "no_output_purpose_field",
+    "mood_visible_only",
+    "mood_spread",
+    "q_no_lighting",
+    "aspect_field_shown",
 }
 
 

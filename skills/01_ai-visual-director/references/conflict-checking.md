@@ -58,7 +58,7 @@
 
 ### 目标模型
 
-- GPT Image 2 输出含 Midjourney 参数或引用代码；
+- GPT Image 输出含 Midjourney 参数或引用代码；
 - Midjourney 普通生成输出混入 API 设置；
 - Z0 却交付声称可直接用于某个模型的最终英文提示词。
 - 开放字段被写成 `left open`、`unspecified` 或被通用负面词间接锁定。

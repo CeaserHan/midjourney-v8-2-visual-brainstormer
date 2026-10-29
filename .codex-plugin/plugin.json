@@ -1,24 +1,22 @@
 {
   "name": "midjourney-v8-2-visual-brainstormer",
-  "version": "0.2.0",
-  "description": "Direct two-round visual prompting for Midjourney V8.2 and GPT Image 2 across photography, cinema, concept art, illustration, painting, and CG.",
+  "version": "0.3.2",
+  "description": "AI visual direction and prompt writing for Midjourney and GPT Image, with two-round scene and medium selection, keyframes, refinement, and diagnostics.",
   "author": {
     "name": "Local developer"
   },
   "skills": "./skills/",
   "interface": {
-    "displayName": "AI 视觉导演",
-    "shortDescription": "两轮确定场景与媒介表现，并适配 MJ V8.2 和 GPT Image 2",
-    "longDescription": "从年代与地点开始，以第一轮确定时间、具体地点、人物、事件、天气、媒介和用途；第二轮根据媒介动态推荐作品类型、表现画风、历史流派、作者、器材或制作过程及光色。支持摄影、真人电影、游戏与电影概念美术、插画、油画、水彩和 CG，并分别适配 Midjourney V8.2 与 GPT Image 2 的提示语言。",
+    "displayName": "01_AI 视觉导演",
+    "shortDescription": "两轮选择场景与媒介表现，为 MJ 和 GPT Image 写提示词，也做视频关键帧",
+    "longDescription": "通过两轮索引选择，为 Midjourney 和 GPT Image 编写英文提示词，覆盖摄影、真人电影、动画、游戏与电影概念美术、漫画、插画、绘画、版画、CG、平面设计和实验艺术。支持视觉探索、固定场景多机位、单条定稿、视频关键帧、选图细化与失败诊断。",
     "developerName": "Local developer",
     "category": "Productivity",
     "capabilities": [
       "Interactive"
     ],
     "defaultPrompt": [
-      "从我提供的年代和地点开始，用两轮索引设计一套视觉方案。",
-      "为同一场景生成12个视觉探索方向或6个固定内容构图版本。",
-      "把已选视觉方案分别改写为 Midjourney V8.2 或 GPT Image 2 提示词。"
+      "使用 $01_ai-visual-director 从我的构想开始，通过两轮索引设计并输出适合目标图像模型的提示词。"
     ]
   }
 }

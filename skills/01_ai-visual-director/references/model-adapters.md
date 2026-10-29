@@ -4,9 +4,10 @@
 
 1. 共同内容层
 2. Z 路由
-3. Midjourney V8.2 适配
-4. GPT Image 2 适配
-5. 跨模型污染检查
+3. Midjourney 适配
+4. GPT Image 适配
+5. 共同写作规则
+6. 跨模型污染检查
 
 ## 1. 共同内容层
 
@@ -16,13 +17,14 @@
 
 ## 2. Z 路由
 
-- `Z1 Midjourney V8.2`：读取 [midjourney-v8-2.md](midjourney-v8-2.md)。
-- `Z2 GPT Image 2`：读取 [gpt-image-2.md](gpt-image-2.md)。
+- `Z1 Midjourney`：读取 [midjourney.md](midjourney.md)。
+- `Z2 GPT Image`：读取 [gpt-image.md](gpt-image.md)。
+- `Z3 两个都要`：同时读取两个适配文件，按 output-contract 第 9 节分别输出。
 - `Z0 暂不指定`：只交付中文方向、构图签名或媒介中立的内容结构；最终英文模型提示词前只补问 Z。
 
 不得让 AI 猜测用户使用的平台。不得在一个代码块中混合两种模型语法。用户明确要求两套对照时，使用同一内容账本分别输出并清楚标注。
 
-## 3. Midjourney V8.2 适配
+## 3. Midjourney 适配
 
 把“结构化”落实为稳定的信息顺序，而不是可见字段标题。输出一段完整、独立、可直接复制的英文视觉描述；按任务需要依次使用非空部分：
 
@@ -35,9 +37,9 @@
 
 以可见名词、动作、位置关系和材质结果为主。删除重复属性、同义真实性口号、内部字段代码和不能在画面中证明的抽象判断。不写 `Goal:`、`Scene:`、`Must preserve:`、`Constraints:`、`Change only:`、发布命令或任何 `--` 参数。
 
-细化与变体仍输出完整独立提示词，正向重述修改后的最终画面。唯一变化及保留说明放在代码块外；代码块内不写 `same`、`original`、`source image`、`preserve`、`unchanged`、`identical` 或其他依赖参照图的编辑命令，也不写 GPT Image 2 的编辑协议。平台设置放在提示词之外，且只在用户主动询问时提供。
+细化与变体仍输出完整独立提示词，正向重述修改后的最终画面。唯一变化及保留说明放在代码块外；代码块内不写 `same`、`original`、`source image`、`preserve`、`unchanged`、`identical` 或其他依赖参照图的编辑命令，也不写 GPT Image 的编辑协议。平台设置放在提示词之外，且只在用户主动询问时提供。
 
-## 4. GPT Image 2 适配
+## 4. GPT Image 适配
 
 使用清楚的制作指令而不是 Midjourney 关键词串。单一主体、单一场景、无精确布局、无图片文字、无多图输入且不是编辑任务时，可以使用紧凑自然段。复杂场景、精确布局、多人物、多图输入、图片文字或编辑任务使用必要的短标签：
 
@@ -78,9 +80,19 @@ Keep unchanged: ...
 
 尺寸、质量、格式、压缩和背景属于接口设置，不混入视觉提示词。用户未选择 C 时，不以“cinematic lighting”等口号静默补色。`no watermark`、`no logo`、`no text`、`no UI` 等通用负面词也属于额外约束，只有用户明确选择、用途必需或编辑连续性需要时才能加入。
 
-## 5. 跨模型污染检查
+## 5. 共同写作规则
 
-- GPT Image 2 输出不得包含 Midjourney 参数、Style Reference 代码、Profile ID 或官网控件说明。
+- O（用途）不写入英文提示词；K 只写成可见形态，不写交付语境。只有当用途决定可见版面时（封面需留出标题区、海报需写出指定文字），才把那个可见结果写进去。
+- M 必需的识别信号必须写入；风格卡中属于 V/H/Q/C 的示例只在对应字段已选或为 X 时使用，见 [styles/README.md](styles/README.md)。
+- 一组提示词共享的美术选择，每条按该画面内容重写为不同的可见结果，不粘贴同一串结尾。
+- 双模型输出时，GPT Image 版可以把同一内容写得更明确，但不得新增 Midjourney 版没有的内容事实。
+- B 情绪基调只写成人物状态、动作、姿态、空间关系和节奏，不写 `melancholic mood` 之类的抽象情绪词，也不借它填补开放的光色或天气。
+- F 画幅永远写在代码块外；构图描述（负空间、人物大小、左右关系）按所选比例设计。
+- O 只在适用时出现：要求文字时把准确文字和位置写入（GPT Image 用 Text 标签；Midjourney 在代码块外提醒文字不可靠），要求留白时写出留白位置。
+
+## 6. 跨模型污染检查
+
+- GPT Image 输出不得包含 Midjourney 参数、Style Reference 代码、Profile ID 或官网控件说明。
 - Midjourney 输出不得使用 `Change only / Keep unchanged` 或 `same / preserve / unchanged / identical` 等编辑协议冒充视觉描述；只有代码块外的细化说明可以解释变化与保留项。
 - 两个模型的内容、人物数量、地点、事件、媒介和已选美术字段必须一致。
 - 适配器不得添加未选择的画师、流派、设备、色彩或画幅。
